@@ -1,0 +1,38 @@
+#!/bin/bash
+
+#Install basic build tools
+sudo apt install -y zlib1g-dev autogen gcc libssl-dev debmake git
+
+mkdir build_dir
+pushd build_dir
+ #git clone --single-branch --branch V_8_2 https://github.com/openssh/openssh-portable.git
+ #tar czf openssh_8.2p1.orig.tar.gz openssh-portable
+ wget http://archive.ubuntu.com/ubuntu/pool/main/o/openssh/openssh_8.2p1.orig.tar.gz
+ tar xzf openssh_8.2p1.orig.tar.gz
+ cd openssh-8.2p1
+ wget http://archive.ubuntu.com/ubuntu/pool/main/o/openssh/openssh_8.2p1-4.debian.tar.xz
+ tar xvf openssh_8.2p1-4.debian.tar.xz
+ rm -f openssh_8.2p1-4.debian.tar.xz
+
+ # Install Build dependency packages
+
+ sudo apt install -y equivs
+ mk-build-deps
+ sudo apt install -y ./openssh-build-deps_8.2p1-4_amd64.deb
+
+ # Update change log ( changes the version to 8.2p1-5 )
+ export DEBEMAIL=jimyjohny@nixhat.com
+ export DEBFULLNAME="Jimy Johny"
+ dch -U "OpenSSH HPN Patches" 
+
+popd
+
+# Copy HPN patch debian/patches
+cp hpn.patch build_dir/openssh-8.2p1/debian/patches/
+echo hpn.patch >> build_dir/openssh-8.2p1/debian/patches/series
+
+pushd build_dir/openssh-8.2p1
+ #Build ubuntu packages
+ dpkg-source --commit
+ debuild -us -uc
+popd
